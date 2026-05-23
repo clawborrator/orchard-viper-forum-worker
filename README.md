@@ -20,7 +20,7 @@ scp viperclub.cookies.json vm:./orchard-viper-forum-worker/secrets/
 
 # 2. Copy and fill in .env
 cp .env.example .env
-$EDITOR .env       # set CLAWBORRATOR_PAT + REPO_URL etc.
+$EDITOR .env       # ANTHROPIC_API_KEY + CLAWBORRATOR_TOKEN at minimum
 
 # 3. Up
 docker compose up -d
@@ -34,8 +34,11 @@ The container will:
    container's workspace.
 3. Start a Claude Code session with that repo's `CLAUDE.md` as
    the playbook.
-4. Register with the hub via the channel token (`CLAWBORRATOR_PAT`)
-   under the routing name (`ROUTING_NAME`).
+4. Generate `/workspace/repo/.mcp.json` from `CLAWBORRATOR_TOKEN` +
+   `CLAWBORRATOR_HUB_URL` (the worker_v1 entrypoint does this — the
+   agent repo never ships a checked-in .mcp.json).
+5. Register with the hub via that token under
+   `CLAWBORRATOR_ROUTING_NAME` (defaults to `orchard-viper-forum`).
 5. Run `node specialists/viperclub.js auth-check` on the first
    prompt to confirm the cookies are alive.
 6. Wait for inbound dispatches.
