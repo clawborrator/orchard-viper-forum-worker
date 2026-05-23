@@ -1,0 +1,42 @@
+# orchard-viper-forum-worker — docker-compose for the
+# @MRIIOT/orchard-viper-forum specialist agent.
+#
+# Pulls the agent code (CLAUDE.md + specialists/viperclub.js) from
+# the sibling repo via REPO_URL in .env:
+#   https://github.com/clawborrator/orchard-viper-forum-repo
+#
+# Runs as a SINGLE long-lived worker (no fan-out children, no cron).
+# Stays online to receive inbound dispatches via route_to_peer from
+# @MRIIOT/orchard-conductor, or direct asks from the public-live-view
+# page. Per visitor question: one search + one or two thread reads +
+# a cited answer.
+#
+#   1. Capture the VCA forum cookies (see orchard-viper-forum-repo
+#      README for the Cookie-Editor flow) and drop them into
+#      ./secrets/viperclub.cookies.json.
+#   2. Fill in .env (copy from .env.example).
+#   3. docker compose up -d
+#   4. docker compose logs -f          # watch the agent
+#   5. docker compose down             # stop + remove
+#
+# Image is ladder99/clawborrator-worker-playwright:latest — the
+# Playwright extension of the base worker_v1 image. Same image as
+# reddit-engager. No local build required.
+
+services:
+  viper-forum:
+    image:          ladder99/clawborrator-worker-playwright:latest
+    container_name: orchard-viper-forum
+    env_file:       .env
+    # Chromium uses /dev/shm heavily; default 64MB is not enough.
+    # 2GB matches Playwright's docs for stable headless runs.
+    shm_size:       2gb
+    volumes:
+      # VCA forum cookies — read-only. The Playwright wrapper at
+      # specialists/viperclub.js loads these via context.addCookies()
+      # so it never has to navigate the login form (which would
+      # trigger captcha / 2FA / new-device email on the forum).
+      - ./secrets/viperclub.cookies.json:/secrets/viperclub.cookies.json:ro
+    stdin_open: true
+    tty:        true
+    restart:    unless-stopped
