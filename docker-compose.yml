@@ -37,6 +37,14 @@ services:
       # so it never has to navigate the login form (which would
       # trigger captcha / 2FA / new-device email on the forum).
       - ./secrets/viperclub.cookies.json:/secrets/viperclub.cookies.json:ro
+      # Host-side bind for /workspace so identity.json (and the cloned
+      # repo) survive `docker compose up -d --force-recreate`. Without
+      # this, the hub mints a fresh session_id on every container
+      # recreate and the published @MRIIOT/orchard-viper-forum agent
+      # record orphans — operator has to manually re-publish. Bind
+      # mount mirrors the parity behavior of a managed (non-docker)
+      # Claude Code session whose /workspace is just a real directory.
+      - ./workspace:/workspace
     stdin_open: true
     tty:        true
     restart:    unless-stopped
